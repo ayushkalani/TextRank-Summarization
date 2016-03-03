@@ -1,6 +1,6 @@
 """
 https://web.eecs.umich.edu/~mihalcea/papers/mihalcea.emnlp04.pdf
-
+Total number of summaries generated from articles is 566 and approx time taken is 70 mins and cpu usage is 100%
 """
 
 import nltk
@@ -9,7 +9,7 @@ from operator import itemgetter
 import networkx as nx
 import os
 
-#apply syntactic filters based on POS tags
+#apply syntactic filters based on POS(Part-of-speech) tags
 def filter_for_tags(tagged, tags=['NN', 'JJ', 'NNP']):
     return [item for item in tagged if item[1] in tags]
 
@@ -54,7 +54,7 @@ def buildGraph(nodes):
     gr = nx.Graph() #initialize an undirected graph
     gr.add_nodes_from(nodes)
     nodePairs = list(itertools.combinations(nodes, 2))
-
+    
     #add edges to the graph (weighted by Levenshtein distance)
     for pair in nodePairs:
         firstString = pair[0]
@@ -68,11 +68,15 @@ def extractKeyphrases(text):
     #tokenize the text using nltk
     wordTokens = nltk.word_tokenize(text)
 
-    #assign POS tags to the words in the text
+    #assign POS tags to the words in the text including all POS tags
     tagged = nltk.pos_tag(wordTokens)
+
+    #complete text in textlist
     textlist = [x[0] for x in tagged]
     
+    
     tagged = filter_for_tags(tagged)
+
     tagged = normalize(tagged)
     #print tagged
 
@@ -90,7 +94,7 @@ def extractKeyphrases(text):
 
     #most important words in ascending order of importance
     keyphrases = sorted(calculated_page_rank, key=calculated_page_rank.get, reverse=True)
-    print keyphrases
+    #print keyphrases
     #the number of keyphrases returned will be relative to the size of the text (a third of the number of vertices)
     aThird = len(word_set_list) / 3
     keyphrases = keyphrases[0:aThird+1]
@@ -123,13 +127,15 @@ def extractKeyphrases(text):
         
     return modifiedKeyphrases
 
+
+    
+
 def extractSentences(text):
     sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
     sentenceTokens = sent_detector.tokenize(text.strip())
     graph = buildGraph(sentenceTokens)
-
+    #nx.pagerank-PageRank computes a ranking of the nodes in the graph G based on the structure of the incoming links. It was originally designed as an algorithm to rank web pages
     calculated_page_rank = nx.pagerank(graph, weight='weight')
-
     #most important sentences in ascending order of importance
     sentences = sorted(calculated_page_rank, key=calculated_page_rank.get, reverse=True)
 
@@ -144,11 +150,11 @@ def extractSentences(text):
 def writeFiles(summary, keyphrases, fileName):
     "outputs the keyphrases and summaries to appropriate files"
     print "Generating output to " + 'keywords/' + fileName
+    #keyphrases=keyphrases.decode('utf-8')
     keyphraseFile = open('keywords/' + fileName, 'w')
     for keyphrase in keyphrases:
         keyphraseFile.write(keyphrase + '\n')
     keyphraseFile.close()
-
     print "Generating output to " + 'summaries/' + fileName
     summaryFile = open('summaries/' + fileName, 'w')
     summaryFile.write(summary)
@@ -159,36 +165,16 @@ def writeFiles(summary, keyphrases, fileName):
 
 #retrieve each of the articles
 articles = os.listdir("articles")
-for article in articles:
-    print 'Reading articles/' + article
-    articleFile = open('articles/' + article, 'r')
-    #text = articleFile.read()
-    #text = text.decode('utf-8')
-    text="""Come in here, dear boy, have a cigar.
-You're gonna go far, you're gonna fly high,
-You're never gonna die, you're gonna make it if you try; they're gonna love you.
-
-Well, I've always had a deep respect, and I mean that most sincerely.
-The band is just fantastic, that is really what I think.
-Oh by the way, which one's Pink?
-
-And did we tell you the name of the game, boy?
-We call it Riding the Gravy Train.
-
-We're just knocked out.
-We heard about the sell out.
-You gotta get an album out,
-You owe it to the people. We're so happy we can hardly count.
-
-Everybody else is just green, have you seen the chart?
-It's a helluva start, it could be made into a monster
-If we all pull together as a team.
-
-And did we tell you the name of the game, boy?
-We call it Riding the Gravy Train.
-
-"""
-    keyphrases = extractKeyphrases(text)
-    #keyphrases=keyphrasel.encode('utf-8')
-    summary = extractSentences(text)
-    writeFiles(summary, keyphrases, article)
+mo=[]
+for yo in articles:
+    mo.append(yo)
+for index in range(len(mo)):
+    yo=os.listdir(os.path.join("articles", mo[index]))
+    for article in yo:
+        print 'Reading articles/' + article
+        articleFile = open('articles/'+mo[index]+'/' +article, 'r')
+        text = articleFile.read().decode('utf-8')
+        keyphrases = extractKeyphrases(text)
+        #keyphrases=keyphrasel.encode('utf-8')
+        summary = extractSentences(text)
+        writeFiles(summary, keyphrases, article)
